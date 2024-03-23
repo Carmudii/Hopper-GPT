@@ -3,7 +3,7 @@ import json
 import re
 import gc
 
-OPENAI_API_KEY = ''
+OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY'
 
 IGNORED_CLASS_PREFIXES = [
     'AFNetwork', 'AFHTTP', 'AFURL', 'AFSecurity',

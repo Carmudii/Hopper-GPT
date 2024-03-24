@@ -4,6 +4,7 @@ import re
 import gc
 
 OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY'
+ALWAYS_ANSWER_IN_LANGUAGE = 'ENGLISH'
 
 IGNORED_CLASS_PREFIXES = [
     'AFNetwork', 'AFHTTP', 'AFURL', 'AFSecurity',
@@ -75,12 +76,12 @@ class CodeExplainer:
                     else:
                         # Add current line with indentation to lines
                         lines.append(' ' * indentation + current_line)
-                        if current_line and (current_line[0] == '-') or (current_line[0] == ' ') or current_line[0].isdigit():
-                            current_line = ' ' * 2 + word
-                        else:
-                            current_line = word
+                        # if current_line and (current_line[0] == '-') or (current_line[0] == ' ') or current_line[0].isdigit():
+                        #     current_line = ' ' + word
+                        # else:
+                        current_line = word
                 # Add remaining part of line
-                lines.append(' ' * (indentation * 2) + current_line)
+                lines.append(' ' * indentation + current_line)
             else:
                 # Add line with indentation to lines
                 lines.append(line)
@@ -119,6 +120,7 @@ class CodeExplainer:
 Can you describe and breakdown what class {class_name} does? and don't forget to explain the instruction set meaning in the pseudo code
 Here is pseudo code:
 {codes}
+Always respond in {ALWAYS_ANSWER_IN_LANGUAGE} languages
 """)
             print(f"Description for class {class_name}: \n{description}\n{self._end_flag}\n")
             del codes
@@ -167,6 +169,7 @@ Here is pseudo code:
 Can you describe and breakdown what this procedure does? include parameters? and don't forget to explain the instruction set meaning in the pseudo code
 Here is pseudo code:
 {codes}
+Always respond in {ALWAYS_ANSWER_IN_LANGUAGE} languages
 """)
         print(f"Description for method{method_name} at address {hex(current_procedure.getEntryPoint())}{class_name}: \n{description}\n{self._end_flag}\n")
         del codes
@@ -186,6 +189,7 @@ Here is pseudo code:
 Can you describe and breakdown what this procedure asm code does? include parameters, variables, and instructions set meaning in the asm code.
 Here is asm code:
 {asm_codes}
+Always respond in {ALWAYS_ANSWER_IN_LANGUAGE} languages
 """)
             print(f"Description for instruction set at address {hex(current_procedure.getEntryPoint())}{class_name}: \n{description}\n{self._end_flag}\n")
             description = self._splitted_to_multiple_line(description)

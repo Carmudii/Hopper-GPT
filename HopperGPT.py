@@ -3,7 +3,7 @@ import json
 import re
 import gc
 
-OPENAI_API_KEY = 'YOUT_OPENAI_API_KEY'
+OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY'
 
 IGNORED_CLASS_PREFIXES = [
     'AFNetwork', 'AFHTTP', 'AFURL', 'AFSecurity',
@@ -48,6 +48,45 @@ class CodeExplainer:
             return class_name, method_name, params
         else:
             return None, None, None
+        
+    def _splitted_to_multiple_line(self, text):
+
+        MAX_LINE_LENGTH = 120
+        lines = []
+
+        # Split description into lines
+        description_lines = text.split('\n')
+
+        for line in description_lines:
+            # Determine indentation dynamically for each line
+            indentation = len(line) - len(line.lstrip())
+
+            if len(line) > MAX_LINE_LENGTH:
+                # Split line by words while maintaining indentation
+                words = line.split()
+                current_line = ''
+                for word in words:
+                    if len(current_line) + len(word) + 1 <= MAX_LINE_LENGTH:
+                        # Add word to current line if it doesn't exceed the max length
+                        if current_line:
+                            current_line += ' ' + word
+                        else:
+                            current_line = word
+                    else:
+                        # Add current line with indentation to lines
+                        lines.append(' ' * indentation + current_line)
+                        if current_line and (current_line[0] == '-') or (current_line[0] == ' ') or current_line[0].isdigit():
+                            current_line = ' ' * 2 + word
+                        else:
+                            current_line = word
+                # Add remaining part of line
+                lines.append(' ' * (indentation * 2) + current_line)
+            else:
+                # Add line with indentation to lines
+                lines.append(line)
+
+        # Join the lines back together
+        return '\n'.join(lines)
 
     def _ask_gpt(self, prompt):
         url = 'https://api.openai.com/v1/chat/completions'
@@ -144,11 +183,13 @@ Here is pseudo code:
 
             print(f"{index+1}. Explaining procedure{method_name} instruction set at address {hex(address)}{class_name}:\n{asm_codes}")
             description = self._ask_gpt(f"""
-    Can you describe and breakdown what this procedure asm code does? include parameters? and don't forget to explain the instruction set meaning in the asm code
-    Here is asm code:
-    {asm_codes}
-    """)
+Can you describe and breakdown what this procedure asm code does? include parameters, variables, and instructions set meaning in the asm code.
+Here is asm code:
+{asm_codes}
+""")
             print(f"Description for instruction set at address {hex(current_procedure.getEntryPoint())}{class_name}: \n{description}\n{self._end_flag}\n")
+            description = self._splitted_to_multiple_line(description)
+
             self.current_segment.setCommentAtAddress(address, description)
             del asm_codes
             gc.collect()

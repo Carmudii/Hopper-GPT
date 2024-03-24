@@ -3,7 +3,7 @@ import json
 import re
 import gc
 
-OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY'
+OPENAI_API_KEY = 'YOUT_OPENAI_API_KEY'
 
 IGNORED_CLASS_PREFIXES = [
     'AFNetwork', 'AFHTTP', 'AFURL', 'AFSecurity',
@@ -121,7 +121,7 @@ Here is pseudo code:
             print("[-] Oppss.. No current procedure found.")
             return
         
-        method_name, class_name, params, codes = self._get_procedure_info(current_procedure)
+        method_name, class_name, _, _, codes = self._get_procedure_info(current_procedure)
 
         print(f"Explaining procedure{method_name} at address {hex(current_procedure.getEntryPoint())}{class_name}:\n{codes}")
         description = self._ask_gpt(f"""
@@ -140,15 +140,16 @@ Here is pseudo code:
             return
         
         for index in range(current_procedure.getBasicBlockCount()):
-            method_name, class_name, _, asm_codes = self._get_procedure_info(current_procedure, asm=True)
+            method_name, class_name, _, address, asm_codes = self._get_procedure_info(current_procedure, asm=True, index=index)
 
-            print(f"{index+1}. Explaining procedure{method_name} instruction set at address {hex(current_procedure.getEntryPoint())}{class_name}:\n{asm_codes}")
+            print(f"{index+1}. Explaining procedure{method_name} instruction set at address {hex(address)}{class_name}:\n{asm_codes}")
             description = self._ask_gpt(f"""
     Can you describe and breakdown what this procedure asm code does? include parameters? and don't forget to explain the instruction set meaning in the asm code
     Here is asm code:
     {asm_codes}
     """)
             print(f"Description for instruction set at address {hex(current_procedure.getEntryPoint())}{class_name}: \n{description}\n{self._end_flag}\n")
+            self.current_segment.setCommentAtAddress(address, description)
             del asm_codes
             gc.collect()
 
@@ -163,13 +164,13 @@ Here is pseudo code:
 
         codes = ''
         if asm:  # Generate assembly code
-            codes = self._generate_asm_codes(procedure, index)
+            (address, codes) = self._generate_asm_codes(procedure, index)
         else:    # Generate pseudo code
             pseudo_code = procedure.decompile()
             if pseudo_code is not None:  # Check if decompilation was successful
                 method_signature = f'{method_name}{params}'
                 codes = f'{method_signature} {{\n{pseudo_code}\n}}\n\n'
-        return method_name, class_name, params, codes
+        return method_name, class_name, params, address, codes
 
     def _generate_asm_codes(self, procedure, index):
         asm_codes = '---------- ASM_CODE ----------\n'
@@ -201,13 +202,24 @@ Here is pseudo code:
                 current_address += instruction.getInstructionLength()
             else:
                 current_address += 1
-        return asm_codes
+        return (starting_address, asm_codes)
 
 document = Document.getCurrentDocument()
 explainer = CodeExplainer(document)
 
-message = 'Select explaining type:'
-buttons = ['[-] All Classes', '[-] Name Class', '[-] Psudo Code', '[-] ASM Instruction', '[-] Cancel']
+# Ask user to select type of explanation
+line = ''.join(['-'] * 120)
+message = f'''
+{line}
+1. All Classes: Will find all classes in the document and explain their methods based on the generated pseudo code.
+2. Input Class Name: Will explain the input class name and its methods based on the generated pseudo code.
+3. Pseudo Code: Will explain the current procedure by generating pseudo code.
+4. ASM Instruction: Will explain the ASM instruction set for the current procedure.
+5. Cancel
+{line}
+[-] Select the type of explanation:
+'''
+buttons = ['[1] All Classes', '[2] Input Class Name', '[3] Pseudo Code', '[4] ASM Instruction', '[5] Cancel']
 button_index = document.message(message, buttons)
 if button_index == 0:
     explainer.explain_class()
@@ -217,7 +229,7 @@ elif button_index == 1:
     if input_class_name is None:
         print('Cancel Explaining!')
     elif input_class_name == '':
-        print('Class name can not be empty!')
+        print('Class name cannot be empty!')
     else:
         explainer.explain_class(input_class_name)
 elif button_index == 2:

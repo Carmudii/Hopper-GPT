@@ -8,15 +8,15 @@ This Python script assists in explaining code by generating pseudo code and prov
 
 ## Functionality
 
-- **Explain Classes**: Lists classes and their methods, generates pseudo code, and prompts the user to describe each class's functionality.
-- **Explain Pseudo Procedures**: Explains the current procedure (method) by generating pseudo code and asking for a description.
-- **Explain ASM Procedures**: Explains assembly instructions for the current procedure by generating assembly code and requesting a description.
+- **Explain Classes**: Explains all classes and their methods in the current document by generating pseudo code.
+- **Explain Pseudo Procedures**: Explains the current procedure (method) by generating pseudo code.
+- **Explain ASM Procedures**: Explains assembly instructions for the current procedure by generating assembly code.
 - **User Interaction**: Provides a menu for selecting the type of explanation desired.
 - **OpenAI Integration**: Utilizes the OpenAI API to generate natural language descriptions for code components.
 
 ## Usage
 
-1. Copy the `CodeExplainer.py` script to your Hopper Disassembler Script Editor.
+1. Copy the `HopperGPT.py` script to your Hopper Disassembler Script Editor.
 2. Replace `'OPENAI_API_KEY'` with your OpenAI API key.
 3. Customize ignored class prefixes and label names as needed.
 4. Run the script

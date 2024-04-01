@@ -120,7 +120,7 @@ class CodeExplainer:
 Can you describe and breakdown what class {class_name} does? and don't forget to explain the instruction set meaning in the pseudo code
 Here is pseudo code:
 {codes}
-Always respond in {ALWAYS_ANSWER_IN_LANGUAGE} languages
+Always respond in {ALWAYS_ANSWER_IN_LANGUAGE}
 """)
             print(f"Description for class {class_name}: \n{description}\n{self._end_flag}\n")
             del codes
@@ -169,7 +169,7 @@ Always respond in {ALWAYS_ANSWER_IN_LANGUAGE} languages
 Can you describe and breakdown what this procedure does? include parameters? and don't forget to explain the instruction set meaning in the pseudo code
 Here is pseudo code:
 {codes}
-Always respond in {ALWAYS_ANSWER_IN_LANGUAGE} languages
+Always respond in {ALWAYS_ANSWER_IN_LANGUAGE}
 """)
         print(f"Description for method{method_name} at address {hex(current_procedure.getEntryPoint())}{class_name}: \n{description}\n{self._end_flag}\n")
         del codes
@@ -183,6 +183,10 @@ Always respond in {ALWAYS_ANSWER_IN_LANGUAGE} languages
         
         for index in range(current_procedure.getBasicBlockCount()):
             method_name, class_name, _, address, asm_codes = self._get_procedure_info(current_procedure, asm=True, index=index)
+            if not asm_codes:
+                description = "Sorry, I can't recognize this procedure instruction set."
+                self.current_segment.setCommentAtAddress(address, description)
+                continue
 
             print(f"{index+1}. Explaining procedure{method_name} instruction set at address {hex(address)}{class_name}:\n{asm_codes}")
             description = self._ask_gpt(f"""
@@ -218,7 +222,7 @@ Always respond in {ALWAYS_ANSWER_IN_LANGUAGE} languages
         return method_name, class_name, params, address, codes
 
     def _generate_asm_codes(self, procedure, index):
-        asm_codes = '---------- ASM_CODE ----------\n'
+        asm_codes = ''
         basic_block = procedure.getBasicBlock(index)                
         starting_address = basic_block.getStartingAddress()        
         ending_address = basic_block.getEndingAddress()
@@ -232,9 +236,9 @@ Always respond in {ALWAYS_ANSWER_IN_LANGUAGE} languages
                 instruction_string = f"0x{current_address:X}: " + instruction.getInstructionString()                
                 argCount = instruction.getArgumentCount()
 
-                if argCount > 0:
+                if argCount >= 0:
 
-                    for idx in range(instruction.getArgumentCount()):
+                    for idx in range(argCount):
                         instruction_string += " " + instruction.getFormattedArgument(idx)
                             
                     if instruction.isAConditionalJump():
